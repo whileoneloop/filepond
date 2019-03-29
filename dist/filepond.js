@@ -8699,13 +8699,6 @@
     // set initial options
     store.dispatch('SET_OPTIONS', { options: initialOptions });
 
-    // kick thread if visibility changes
-    var visibilityHandler = function visibilityHandler() {
-      if (document.hidden) return;
-      store.dispatch('KICK');
-    };
-    document.addEventListener('visibilitychange', visibilityHandler);
-
     // re-render on window resize start and finish
     var resizeDoneTimer = null;
     var isResizing = false;
@@ -8808,6 +8801,33 @@
         }
       }
     };
+
+    // kick thread if visibility changes
+    var pollWriteTimer = null;
+    var visibilityHandler = function visibilityHandler() {
+      // TODO: remove this hack when filepond fires upload start/completion events when it
+      // is in a background tab.
+      //if (document.hidden) return;
+      //console.log('filepond, visibilityHandler, dispatch KICK', { hidden: document.hidden });
+      store.dispatch('KICK');
+      if (pollWriteTimer) {
+        clearInterval(pollWriteTimer);
+      }
+      if (document.hidden) {
+        pollWriteTimer = setInterval(function() {
+          //console.log('Call _write() while document is hidden for background file upload functionality', readWriteApi);
+          if (!readWriteApi) {
+            if (pollWriteTimer) {
+              // fp instance has been destroyed, remove the timer.
+              clearInterval(pollWriteTimer);
+            }
+          } else {
+            readWriteApi._write();
+          }
+        }, 100);
+      }
+    };
+    document.addEventListener('visibilitychange', visibilityHandler);
 
     //
     // EXPOSE EVENTS -------------------------------------------------------------------------------------
