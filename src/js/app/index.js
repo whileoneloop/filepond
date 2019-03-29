@@ -48,7 +48,8 @@ export const createApp = (initialOptions = {}) => {
 
     // kick thread if visibility changes
     const visibilityHandler = () => {
-        if (document.hidden) return;
+        // always kick thread
+        //if (document.hidden) return;
         store.dispatch('KICK');
     }
     document.addEventListener('visibilitychange', visibilityHandler);
